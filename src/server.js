@@ -9,10 +9,13 @@ const PORT = process.env.PORT || 3000;
 // Crear servidor HTTP a partir de Express
 const server = http.createServer(app);
 
-// Configurar Socket.IO
+// ✅ CONFIGURACIÓN CORRECTA DE SOCKET.IO (PRODUCCIÓN)
 const io = socketIO(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
+    origin: [
+      'http://localhost:4200',
+      'https://panaderiatresreyes.com'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   }
@@ -50,9 +53,9 @@ const startServer = async () => {
     server.listen(PORT, () => {
       console.log('\n=================================');
       console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-      console.log(`📡 API: http://localhost:${PORT}/api`);
-      console.log(`🔌 WebSocket: http://localhost:${PORT}`);
-      console.log(`🔄 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌐 API: https://panaderiatresreyes.onrender.com/api`);
+      console.log(`🔌 WebSocket: https://panaderiatresreyes.onrender.com`);
+      console.log(`🔄 Ambiente: ${process.env.NODE_ENV || 'production'}`);
       console.log('=================================\n');
     });
 
