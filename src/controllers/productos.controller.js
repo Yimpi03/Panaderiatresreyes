@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 // ============================================
-// CONTROLADOR PARA PRODUCTOS (COMPLETO)
+// CONTROLADOR PARA PRODUCTOS (CORREGIDO)
 // ============================================
 
 // Obtener todos los productos
@@ -9,7 +9,9 @@ const obtenerProductos = async (req, res) => {
     try {
         console.log('📦 Obteniendo productos...');
         
-        const [rows] = await db.pool.execute('SELECT * FROM productos WHERE activo = 1 ORDER BY created_at DESC');
+        const [rows] = await db.pool.execute(
+            'SELECT * FROM menu_productos WHERE activo = 1 ORDER BY created_at DESC'
+        );
         
         console.log(`✅ ${rows.length} productos encontrados`);
         
@@ -36,7 +38,7 @@ const obtenerProductoPorId = async (req, res) => {
         console.log(`🔍 Buscando producto ID: ${id}`);
         
         const [rows] = await db.pool.execute(
-            'SELECT * FROM productos WHERE id = ? AND activo = 1',
+            'SELECT * FROM menu_productos WHERE id = ? AND activo = 1',
             [id]
         );
         
@@ -69,7 +71,6 @@ const agregarProducto = async (req, res) => {
         
         console.log('➕ Agregando producto:', titulo);
         
-        // Validar campos requeridos
         if (!imagen || !titulo || !precio) {
             return res.status(400).json({
                 success: false,
@@ -78,17 +79,15 @@ const agregarProducto = async (req, res) => {
         }
         
         const [result] = await db.pool.execute(
-            'INSERT INTO productos (imagen, titulo, descripcion, precio, categoria) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO menu_productos (imagen, titulo, descripcion, precio, categoria) VALUES (?, ?, ?, ?, ?)',
             [imagen, titulo, descripcion || '', precio, categoria || 'General']
         );
         
-        // Obtener el producto recién creado
         const [nuevoProducto] = await db.pool.execute(
-            'SELECT * FROM productos WHERE id = ?',
+            'SELECT * FROM menu_productos WHERE id = ?',
             [result.insertId]
         );
         
-        // Emitir evento por socket
         const io = req.app.get('io');
         if (io) {
             io.emit('productos:nuevo', nuevoProducto[0]);
@@ -118,9 +117,8 @@ const actualizarProducto = async (req, res) => {
         
         console.log('✏️ Actualizando producto ID:', id);
         
-        // Verificar si existe
         const [existente] = await db.pool.execute(
-            'SELECT * FROM productos WHERE id = ? AND activo = 1',
+            'SELECT * FROM menu_productos WHERE id = ? AND activo = 1',
             [id]
         );
         
@@ -131,8 +129,7 @@ const actualizarProducto = async (req, res) => {
             });
         }
         
-        // Construir query dinámica
-        let query = 'UPDATE productos SET ';
+        let query = 'UPDATE menu_productos SET ';
         const updates = [];
         const values = [];
         
@@ -169,13 +166,11 @@ const actualizarProducto = async (req, res) => {
         
         await db.pool.execute(query, values);
         
-        // Obtener producto actualizado
         const [productoActualizado] = await db.pool.execute(
-            'SELECT * FROM productos WHERE id = ?',
+            'SELECT * FROM menu_productos WHERE id = ?',
             [id]
         );
         
-        // Emitir evento por socket
         const io = req.app.get('io');
         if (io) {
             io.emit('productos:actualizado', productoActualizado[0]);
@@ -204,9 +199,8 @@ const eliminarProducto = async (req, res) => {
         
         console.log('🗑️ Eliminando producto ID:', id);
         
-        // Verificar si existe
         const [existente] = await db.pool.execute(
-            'SELECT * FROM productos WHERE id = ? AND activo = 1',
+            'SELECT * FROM menu_productos WHERE id = ? AND activo = 1',
             [id]
         );
         
@@ -217,13 +211,11 @@ const eliminarProducto = async (req, res) => {
             });
         }
         
-        // Soft delete (marcar como inactivo)
         await db.pool.execute(
-            'UPDATE productos SET activo = 0 WHERE id = ?',
+            'UPDATE menu_productos SET activo = 0 WHERE id = ?',
             [id]
         );
         
-        // Emitir evento por socket
         const io = req.app.get('io');
         if (io) {
             io.emit('productos:eliminado', { id, titulo: existente[0].titulo });
