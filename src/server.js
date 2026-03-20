@@ -6,70 +6,50 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
 
-// Crear servidor HTTP a partir de Express
 const server = http.createServer(app);
 
-// ✅ CONFIGURACIÓN CORRECTA DE SOCKET.IO (PRODUCCIÓN)
+// 🔥 SOCKET.IO CORREGIDO
 const io = socketIO(server, {
   cors: {
     origin: [
       'http://localhost:4200',
-      'https://panaderiatresreyes.com'
+      'https://panaderiatresreyes.com',
+      'https://www.panaderiatresreyes.com'
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST'],
     credentials: true
   }
 });
 
-// Hacer io accesible desde las rutas
 app.set('io', io);
 
-// Configuración de Socket.IO
+// 🔥 SOCKET EVENTOS
 io.on('connection', (socket) => {
-  console.log('🟢 Cliente conectado al socket:', socket.id);
-
-  // Eventos para productos
-  socket.on('productos:solicitar-actualizacion', () => {
-    console.log('📢 Solicitud de actualización de productos');
-    io.emit('productos:actualizados', { timestamp: new Date() });
-  });
+  console.log('🟢 Cliente conectado:', socket.id);
 
   socket.on('disconnect', () => {
     console.log('🔴 Cliente desconectado:', socket.id);
   });
 });
 
-// Iniciar servidor
+// 🔥 INICIAR SERVIDOR
 const startServer = async () => {
   try {
-    // Probar conexión a base de datos
     const dbConnected = await testConnection();
 
     if (!dbConnected) {
-      console.warn('⚠️ Servidor iniciando sin conexión a BD');
+      console.warn('⚠️ Sin conexión a BD');
     }
 
-    // Iniciar servidor HTTP
     server.listen(PORT, () => {
-      console.log('\n=================================');
-      console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+      console.log('=================================');
+      console.log(`🚀 Servidor en puerto ${PORT}`);
       console.log(`🌐 API: https://panaderiatresreyes.onrender.com/api`);
-      console.log(`🔌 WebSocket: https://panaderiatresreyes.onrender.com`);
-      console.log(`🔄 Ambiente: ${process.env.NODE_ENV || 'production'}`);
-      console.log('=================================\n');
-    });
-
-    // Manejo de cierre graceful
-    process.on('SIGTERM', () => {
-      console.log('📥 Señal SIGTERM recibida. Cerrando servidor...');
-      server.close(() => {
-        console.log('🛑 Servidor cerrado');
-        process.exit(0);
-      });
+      console.log('=================================');
     });
 
   } catch (error) {
-    console.error('❌ Error al iniciar servidor:', error);
+    console.error('❌ Error al iniciar:', error);
     process.exit(1);
   }
 };

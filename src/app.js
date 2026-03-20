@@ -17,24 +17,37 @@ const productosRoutes = require('./routes/productos.routes');
 
 const app = express();
 
-// 🔥 MIDDLEWARES
-
+// 🔥 SEGURIDAD Y PERFORMANCE
 app.use(helmet());
 app.use(compression());
+app.use(morgan('dev'));
 
-// ✅ SOLUCIÓN REAL CORS (PRODUCCIÓN)
+// 🔥 🔥 CORS PERFECTO (AQUÍ ESTABA EL PROBLEMA)
+const allowedOrigins = [
+  'http://localhost:4200',
+  'https://panaderiatresreyes.com',
+  'https://www.panaderiatresreyes.com'
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:4200',
-    'https://panaderiatresreyes.com'
-  ],
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (Postman, etc)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('❌ CORS bloqueado:', origin);
+      callback(null, false);
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use(morgan('dev'));
+// 🔥 BODY (IMPORTANTE PARA IMÁGENES GRANDES)
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // 🔥 RUTAS
 app.use('/api/gallery', galleryRoutes);
@@ -51,8 +64,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date(),
-    database: process.env.DB_NAME,
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV || 'production'
   });
 });
 
@@ -70,8 +82,7 @@ app.use((err, req, res, next) => {
 
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Error interno del servidor',
-    error: process.env.NODE_ENV === 'development' ? err.stack : {}
+    message: err.message || 'Error interno del servidor'
   });
 });
 
